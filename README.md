@@ -1,4 +1,6 @@
-# Claude-LED-LUCKEY
+# Claude-LED
+
+<img width="1418" height="279" alt="AIHUD" src="https://github.com/user-attachments/assets/9807456f-9da9-4163-afa2-574af535069d" />
 
 [中文](README_CN.md)
 
