@@ -1,6 +1,6 @@
 # Claude-LED
 
-<img width="1418" height="279" alt="AIHUD" src="https://github.com/user-attachments/assets/9807456f-9da9-4163-afa2-574af535069d" />
+<img width="300" height="236" style="display: block; margin: 0 auto;" alt="aiLED" src="https://github.com/user-attachments/assets/ff76e92f-a932-449c-ae15-31b27944fd02" />
 
 [中文](README_CN.md)
 
