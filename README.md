@@ -36,7 +36,7 @@ ESP32C3 Bluetooth BLE status indicator light for Claude Code workflow notificati
 
 > Note: GPIO8 is the onboard blue LED. GPIO0-GPIO3 are reserved for ADC/SPI — do not use.
 
-<img width="846" height="771" alt="PixPin_2026-06-22_17-44-45" src="https://github.com/user-attachments/assets/34b9d4ef-aa04-4e58-a679-30c2fe8f54a5" />
+<img width="2784" height="1854" alt="image" src="https://github.com/user-attachments/assets/b9610df2-42ad-4027-97fe-0090b5382298" />
 
 ## LED Brightness Configuration
 
