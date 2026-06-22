@@ -204,8 +204,8 @@ python scripts/send-hook.py alarm 20  # 红灯常亮 + 极短滴一声
 | SessionStart | 17 | 太极呼吸 | 不响 |
 | UserPromptSubmit | 2 | 绿灯闪烁 | 不响 |
 | PreToolUse | 2 | 绿灯闪烁 | 不响 |
-| PostToolUseFailure | 3 | 黄灯常亮 | 不响 |
-| PermissionRequest | 4 200 | 红灯常亮 | 响 200ms |
+| PostToolUseFailure | 3 | 红灯闪烁 | 不响 |
+| PermissionRequest | 4 200 | 黄灯闪烁 | 响 200ms |
 | Stop | 5 | 绿灯常亮 | 不响 |
 | SessionEnd | 17 | 太极呼吸 | 不响 |
 

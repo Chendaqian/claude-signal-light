@@ -204,8 +204,8 @@ Add hooks in `~/.claude/settings.json`:
 | SessionStart | 17 | Taichi breathing | Off |
 | UserPromptSubmit | 2 | Green flash | Off |
 | PreToolUse | 2 | Green flash | Off |
-| PostToolUseFailure | 3 | Yellow on | Off |
-| PermissionRequest | 4 200 | Red On | 200ms |
+| PostToolUseFailure | 3 | Red flash | Off |
+| PermissionRequest | 4 200 | Yellow flash | 200ms |
 | Stop | 5 | Green on | Off |
 | SessionEnd | 17 | Taichi breathing | Off |
 

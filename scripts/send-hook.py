@@ -41,67 +41,107 @@ Claude Code 别名（兼容旧接口）：
 """
 
 import asyncio
+import subprocess
 import sys
 from bleak import BleakClient, BleakScanner
 
 # ===== 配置 =====
-DEVICE_NAME = "Claude-LED-LUCKEY"
+DEVICE_NAME = "Claude-LED-CCY"
 SERVICE_UUID = "12345678-1234-1234-1234-123456789abc"
 CHARACTERISTIC_UUID = "12345678-1234-1234-1234-123456789abd"
-TIMEOUT_SECONDS = 5
+TIMEOUT_SECONDS = 3  # 减少到 3 秒，匹配 hook timeout
 
 # ===== PowerShell send-hook.ps1 兼容映射（-LedMode → ESP32 命令）=====
+# Claude Code 状态码 → ESP32 别名
+# 注意：数字输入直接发送数字，不经过此映射
 CLAUDE_CODE_MAP = {
     1: "off",       # 全灭
     2: "thinking",  # 绿灯闪烁
-    3: "busy",      # 黄灯常亮
+    3: "error",     # 红灯闪烁
     4: "alarm",     # 红灯常亮
     5: "success",   # 绿灯常亮
-    6: "error",     # 红灯闪烁
+    6: "busy",      # 黄灯常亮
     17: "17",       # 太极呼吸（SessionStart/SessionEnd）
 }
 
 
-async def send_command(command: str):
-    """发送命令到 ESP32"""
-    print(f"Scanning for {DEVICE_NAME}...")
-    device = await BleakScanner.find_device_by_name(DEVICE_NAME, timeout=TIMEOUT_SECONDS)
+async def send_command(command: str, max_retries: int = 3):
+    """发送命令到 ESP32，支持重试"""
+    import logging
+    logger = logging.getLogger(__name__)
 
-    if device is None:
-        print("Device not found!")
-        return False
+    for attempt in range(max_retries):
+        logger.info(f"Scanning for {DEVICE_NAME} (attempt {attempt + 1}/{max_retries})...")
+        print(f"Scanning for {DEVICE_NAME} (attempt {attempt + 1}/{max_retries})...")
+        device = await BleakScanner.find_device_by_name(DEVICE_NAME, timeout=TIMEOUT_SECONDS)
 
-    print(f"Found: {device.name} ({device.address})")
+        if device is None:
+            logger.warning(f"Device not found on attempt {attempt + 1}")
+            print(f"Device not found on attempt {attempt + 1}")
+            if attempt < max_retries - 1:
+                logger.info(f"Retrying in 1 second...")
+                print(f"Retrying in 1 second...")
+                await asyncio.sleep(1)
+                continue
+            return False
 
-    async with BleakClient(device, timeout=TIMEOUT_SECONDS) as client:
-        print(f"Connected: {client.is_connected}")
-        await client.write_gatt_char(CHARACTERISTIC_UUID, command.encode())
-        print(f"Sent: {command}")
+        logger.info(f"Found: {device.name} ({device.address})")
+        print(f"Found: {device.name} ({device.address})")
 
-    return True
+        try:
+            async with BleakClient(device, timeout=TIMEOUT_SECONDS) as client:
+                logger.info(f"Connected: {client.is_connected}")
+                print(f"Connected: {client.is_connected}")
+                await client.write_gatt_char(CHARACTERISTIC_UUID, command.encode())
+                logger.info(f"Sent: {command}")
+                print(f"Sent: {command}")
+                return True
+        except Exception as e:
+            logger.error(f"Connection failed on attempt {attempt + 1}: {e}")
+            print(f"Connection failed on attempt {attempt + 1}: {e}")
+            if attempt < max_retries - 1:
+                logger.info(f"Retrying in 1 second...")
+                print(f"Retrying in 1 second...")
+                await asyncio.sleep(1)
+                continue
+            return False
+
+    return False
 
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: send-hook.py <mode> [buzzer_duration_ms]")
-        print("  mode:                0-19 or name")
-        print("  buzzer_duration_ms:  buzzer duration in ms, 0=off (default 0)")
-        sys.exit(1)
+def do_ble_send(args):
+    """实际 BLE 发送逻辑"""
+    import logging
+    import sys
+    import os
+    from datetime import datetime
 
-    arg = sys.argv[1]
+    # 设置日志
+    log_file = "C:/Users/hiwor/.claude/python-hook.log"
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.INFO,
+        format='%(asctime)s - %(message)s'
+    )
 
-    # 第二个参数：蜂鸣器时长（毫秒），默认 0
-    buzz_ms = sys.argv[2] if len(sys.argv) > 2 else "0"
+    logging.info(f"=== Hook called ===")
+    logging.info(f"Args: {args}")
+    logging.info(f"Python executable: {sys.executable}")
+    logging.info(f"Python version: {sys.version}")
+    logging.info(f"Current directory: {os.getcwd()}")
+    logging.info(f"PATH: {os.environ.get('PATH', 'NOT SET')}")
+
+    arg = args[0]
+    buzz_ms = args[1] if len(args) > 1 else "0"
 
     # 判断是数字还是名称
     if arg.isdigit():
         mode_num = int(arg)
-        if mode_num in CLAUDE_CODE_MAP:
-            command = CLAUDE_CODE_MAP[mode_num]
-        elif 0 <= mode_num <= 19:
+        if 0 <= mode_num <= 19:
             command = str(mode_num)
         else:
             print(f"Invalid mode: {mode_num} (valid: 0-19)")
+            logging.error(f"Invalid mode: {mode_num}")
             sys.exit(1)
     else:
         command = arg.lower()
@@ -111,11 +151,29 @@ def main():
         command = f"{command},{buzz_ms}"
 
     try:
-        success = asyncio.run(send_command(command))
-        sys.exit(0 if success else 1)
+        logging.info(f"Sending command: {command}")
+        result = asyncio.run(send_command(command, max_retries=3))
+        if not result:
+            print("BLE send failed after all retries - device not found or connection failed")
+            logging.error("BLE send failed after all retries - device not found or connection failed")
+            sys.exit(1)
+        else:
+            logging.info("BLE send successful")
     except Exception as e:
         print(f"Error: {e}")
+        logging.error(f"Error: {e}", exc_info=True)
         sys.exit(1)
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: send-hook.py <mode> [buzzer_duration_ms]")
+        print("  mode:                0-19 or name")
+        print("  buzzer_duration_ms:  buzzer duration in ms, 0=off (default 0)")
+        sys.exit(1)
+
+    # 直接执行 BLE 发送（hook 有 timeout，不会阻塞太久）
+    do_ble_send(sys.argv[1:])
 
 
 if __name__ == "__main__":
