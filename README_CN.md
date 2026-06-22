@@ -1,4 +1,8 @@
-# Claude-LED-LUCKEY
+# Claude-LED-LUCKEY 🚦
+
+<div align="center">
+  <img width="300" height="236" style="display: block; margin: 0 auto;" alt="aiLED" src="https://github.com/user-attachments/assets/ff76e92f-a932-449c-ae15-31b27944fd02" />
+</div>
 
 [English](README.md)
 
@@ -214,3 +218,19 @@ python scripts/send-hook.py alarm 20  # 红灯常亮 + 极短滴一声
 - Arduino IDE + ESP32 开发板支持包
 - Python 3.8+
 - bleak（Python BLE 库）：`pip install bleak`
+
+## Contributors
+
+<a href="https://github.com/Chendaqian/claude-signal-light/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Chendaqian/claude-signal-light" />
+</a>
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=Chendaqian%2Fclaude-signal-light&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Chendaqian/claude-signal-light&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Chendaqian/claude-signal-light&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Chendaqian/claude-signal-light&type=date&legend=top-left" />
+ </picture>
+</a>
