@@ -19,13 +19,16 @@ unsigned long buzzPhaseStart = 0;
 #define BUZZER_RESOLUTION 8       // 8 位分辨率
 #define BUZZER_FREQ_1 2000        // 第一声频率 2000Hz
 #define BUZZER_FREQ_2 1000        // 第二声频率 1000Hz（不同声调）
+#define BUZZER_FREQ_3 4000        // 第三声频率 4000Hz（高频提示音）
 #define BUZZER_BEEP_MS 80         // 每声时长 80ms
+#define BUZZER_BEEP3_MS 200       // 第三声时长 200ms
 #define BUZZER_GAP_MS 60          // 两声之间间隔 60ms
 
 // 蜂鸣器参数：
 //   0 = 不响
 //   1 = 短响一声（80ms，主板自检音）
 //   2 = 短响两声（两次不同声调）
+//   3 = 高频短响（200ms，4000Hz）
 
 // 开始响蜂鸣器
 void startBuzz(int freq) {
@@ -57,6 +60,13 @@ void buzz(int buzzParam) {
     buzzerStart = millis();
     buzzerDuration = BUZZER_BEEP_MS;
     startBuzz(BUZZER_FREQ_1);
+  } else if (buzzParam == 3) {
+    // 高频短响（200ms，4000Hz）
+    buzzerOn = true;
+    buzzerStart = millis();
+    buzzerDuration = BUZZER_BEEP3_MS;
+    buzzRemaining = 0;
+    startBuzz(BUZZER_FREQ_3);
   }
 }
 

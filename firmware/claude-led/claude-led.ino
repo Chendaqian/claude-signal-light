@@ -42,9 +42,11 @@
     alarm / permission → 6
     green / blink      → 2
     taichi             → 17
+    castle / sky       → 彩蛋：天空之城
 */
 
 #include "config.h"
+#include "music.h"
 #include "led.h"
 #include "buzzer.h"
 #include "modes.h"
@@ -86,6 +88,9 @@ void setup() {
   ledcAttach(PIN_BUZZER, BUZZER_FREQ_1, BUZZER_RESOLUTION);
   ledcWriteTone(PIN_BUZZER, 0);
 
+  // 启动音：天空之城（非阻塞）
+  startMusic();
+
   // 首次通电默认灯效：HELLO 摩尔斯码
   setMode(18);
 
@@ -104,5 +109,6 @@ void loop() {
 
   updateLed();
   updateBuzz();
+  updateMusic();
   delay(10);
 }

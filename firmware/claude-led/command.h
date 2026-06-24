@@ -86,6 +86,18 @@ bool handleCommand(String cmd) {
   if (cmd == "hello" || cmd == "hellomorse") { setMode(18); return true; }
   if (cmd == "radar") { setMode(19); return true; }
 
+  // 彩蛋：天空之城
+  // castle / sky       → 启动短音 (~2.5秒)
+  // castle,1 / sky,1   → 完整版 (~46秒)
+  if (modeStr == "castle" || modeStr == "sky") {
+    if (musicPlaying) {
+      stopMusic();
+    } else {
+      startMusic(buzzParam == 1);
+    }
+    return true;
+  }
+
   return false;
 }
 
