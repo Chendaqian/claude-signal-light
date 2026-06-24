@@ -37,6 +37,8 @@ ESP32C3 蓝牙 BLE 状态指示灯，用于 Claude Code 工作状态的物理提
 
 > 注意：GPIO8 是板载蓝灯（右侧第 4 个），不要使用。
 
+<img width="2784" height="1854" alt="image" src="https://github.com/user-attachments/assets/b9610df2-42ad-4027-97fe-0090b5382298" />
+
 ## LED 亮度配置
 
 固件中定义了三种颜色的最大亮度常量（0-255），可按需调整：
