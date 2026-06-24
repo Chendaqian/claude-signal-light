@@ -28,28 +28,41 @@ Claude Code 别名（兼容旧接口）：
   off → 0, thinking → 2, busy → 7, success → 5, error → 3, alarm → 6
 
 用法：
-  send-hook.py <mode> [buzzer_duration_ms]
-    mode:                模式编号 0-19 或名称
-    buzzer_duration_ms:  蜂鸣器响的毫秒数，0=不响，默认0
+  send-hook.py <mode> [buzzer_param]
+    mode:         模式编号 0-19 或名称
+    buzzer_param: 蜂鸣器参数
+      0 = 不响
+      1 = 短响一声（80ms，主板自检音）
+      2 = 短响两声（两次不同声调）
 
   示例：
-    send-hook.py 6 200     → 模式6（红灯常亮）+ 蜂鸣器响200ms
-    send-hook.py alarm 20  → 红灯常亮 + 极短滴一声
-    send-hook.py alarm 0   → 红灯常亮 + 不响
-    send-hook.py alarm     → 红灯常亮 + 不响
-    send-hook.py 2         → 模式2（绿灯闪烁），蜂鸣器不响
+    send-hook.py 6 1        → 模式6（红灯常亮）+ 短响一声
+    send-hook.py 6 2        → 模式6（红灯常亮）+ 短响两声
+    send-hook.py alarm 1    → 红灯常亮 + 短响一声
+    send-hook.py alarm 2    → 红灯常亮 + 短响两声
+    send-hook.py alarm 0    → 红灯常亮 + 不响
+    send-hook.py alarm      → 红灯常亮 + 不响
+    send-hook.py 2          → 模式2（绿灯闪烁），蜂鸣器不响
 """
 
 import asyncio
+import json
+import os
 import subprocess
 import sys
 from bleak import BleakClient, BleakScanner
 
 # ===== 配置 =====
-DEVICE_NAME = "Claude-LED-CCY"
-SERVICE_UUID = "12345678-1234-1234-1234-123456789abc"
-CHARACTERISTIC_UUID = "12345678-1234-1234-1234-123456789abd"
-TIMEOUT_SECONDS = 3  # 减少到 3 秒，匹配 hook timeout
+DEVICE_NAME = "Claude-LED-LUCKEY"
+#SERVICE_UUID = "1460d279-efe7-4066-a466-e80dd498c317"
+#CHARACTERISTIC_UUID = "a9680f41-1111-4b02-b787-48592ff38d3b"
+
+SERVICE_UUID = "f4b7e3a1-5c6d-4e8f-9a2b-1c3d5e7f9a0b"
+CHARACTERISTIC_UUID = "8c9d4e2f-1a3b-4c5d-6e7f-8a9b0c1d2e3f"
+
+TIMEOUT_SECONDS = 3  # 连接超时
+SCAN_TIMEOUT = 3  # 扫描超时
+CACHE_FILE = os.path.join(os.environ.get("TEMP", "/tmp"), DEVICE_NAME, "ble-cache.json")
 
 # ===== PowerShell send-hook.ps1 兼容映射（-LedMode → ESP32 命令）=====
 # Claude Code 状态码 → ESP32 别名
@@ -65,23 +78,65 @@ CLAUDE_CODE_MAP = {
 }
 
 
+def _load_cache():
+    """从缓存文件读取设备地址"""
+    try:
+        if os.path.exists(CACHE_FILE):
+            with open(CACHE_FILE, "r") as f:
+                data = json.load(f)
+                return data.get("address")
+    except Exception:
+        pass
+    return None
+
+
+def _save_cache(address):
+    """保存设备地址到缓存文件"""
+    try:
+        cache_dir = os.path.dirname(CACHE_FILE)
+        os.makedirs(cache_dir, exist_ok=True)
+        with open(CACHE_FILE, "w") as f:
+            json.dump({"address": address, "name": DEVICE_NAME}, f)
+    except Exception:
+        pass
+
+
 async def send_command(command: str, max_retries: int = 3):
-    """发送命令到 ESP32，支持重试"""
+    """发送命令到 ESP32，支持重试，优先使用缓存地址"""
     import logging
     logger = logging.getLogger(__name__)
 
+    # 先尝试用缓存地址连接
+    cached_address = _load_cache()
+    if cached_address:
+        logger.info(f"Using cached address: {cached_address}")
+        print(f"Using cached address: {cached_address}")
+        try:
+            async with BleakClient(cached_address, timeout=TIMEOUT_SECONDS) as client:
+                if client.is_connected:
+                    await client.write_gatt_char(CHARACTERISTIC_UUID, command.encode())
+                    logger.info(f"Sent via cache: {command}")
+                    print(f"Sent via cache: {command}")
+                    return True
+        except Exception as e:
+            logger.warning(f"Cached address failed: {e}, falling back to scan")
+            print(f"Cached address failed, scanning...")
+            # 缓存失败，删除缓存
+            try:
+                os.remove(CACHE_FILE)
+            except Exception:
+                pass
+
+    # 缓存不存在或失败，扫描设备
     for attempt in range(max_retries):
         logger.info(f"Scanning for {DEVICE_NAME} (attempt {attempt + 1}/{max_retries})...")
         print(f"Scanning for {DEVICE_NAME} (attempt {attempt + 1}/{max_retries})...")
-        device = await BleakScanner.find_device_by_name(DEVICE_NAME, timeout=TIMEOUT_SECONDS)
+        device = await BleakScanner.find_device_by_name(DEVICE_NAME, timeout=SCAN_TIMEOUT)
 
         if device is None:
             logger.warning(f"Device not found on attempt {attempt + 1}")
             print(f"Device not found on attempt {attempt + 1}")
             if attempt < max_retries - 1:
-                logger.info(f"Retrying in 1 second...")
-                print(f"Retrying in 1 second...")
-                await asyncio.sleep(1)
                 continue
             return False
 
@@ -95,14 +150,13 @@ async def send_command(command: str, max_retries: int = 3):
                 await client.write_gatt_char(CHARACTERISTIC_UUID, command.encode())
                 logger.info(f"Sent: {command}")
                 print(f"Sent: {command}")
+                # 成功后保存地址到缓存
+                _save_cache(device.address)
                 return True
         except Exception as e:
             logger.error(f"Connection failed on attempt {attempt + 1}: {e}")
             print(f"Connection failed on attempt {attempt + 1}: {e}")
             if attempt < max_retries - 1:
-                logger.info(f"Retrying in 1 second...")
-                print(f"Retrying in 1 second...")
-                await asyncio.sleep(1)
                 continue
             return False
 
@@ -116,8 +170,10 @@ def do_ble_send(args):
     import os
     from datetime import datetime
 
-    # 设置日志
-    log_file = "C:/Users/hiwor/.claude/python-hook.log"
+    # 设置日志（存放到临时目录，以设备名作为文件夹）
+    log_dir = os.path.join(os.environ.get("TEMP", "/tmp"), DEVICE_NAME)
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, "python-hook.log")
     logging.basicConfig(
         filename=log_file,
         level=logging.INFO,
@@ -132,7 +188,7 @@ def do_ble_send(args):
     logging.info(f"PATH: {os.environ.get('PATH', 'NOT SET')}")
 
     arg = args[0]
-    buzz_ms = args[1] if len(args) > 1 else "0"
+    buzz_param = args[1] if len(args) > 1 else "0"
 
     # 判断是数字还是名称
     if arg.isdigit():
@@ -146,9 +202,11 @@ def do_ble_send(args):
     else:
         command = arg.lower()
 
-    # 拼接蜂鸣器参数（>0 才发送）
-    if buzz_ms.isdigit() and int(buzz_ms) > 0:
-        command = f"{command},{buzz_ms}"
+    # 拼接蜂鸣器参数
+    if buzz_param.isdigit():
+        buzz_val = int(buzz_param)
+        if buzz_val > 0:
+            command = f"{command},{buzz_param}"
 
     try:
         logging.info(f"Sending command: {command}")
@@ -167,9 +225,9 @@ def do_ble_send(args):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: send-hook.py <mode> [buzzer_duration_ms]")
-        print("  mode:                0-19 or name")
-        print("  buzzer_duration_ms:  buzzer duration in ms, 0=off (default 0)")
+        print("Usage: send-hook.py <mode> [buzzer_param]")
+        print("  mode:         0-19 or name")
+        print("  buzzer_param: 0=off, 1=beep, 2=beepbeep")
         sys.exit(1)
 
     # 直接执行 BLE 发送（hook 有 timeout，不会阻塞太久）

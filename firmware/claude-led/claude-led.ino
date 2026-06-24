@@ -83,8 +83,11 @@ void setup() {
   digitalWrite(PIN_BLUE, LOW);  // 初始蓝灯灭
 
   // 初始化蜂鸣器（ESP32 Core 3.x API）
-  ledcAttach(PIN_BUZZER, BUZZER_FREQ, BUZZER_RESOLUTION);
+  ledcAttach(PIN_BUZZER, BUZZER_FREQ_1, BUZZER_RESOLUTION);
   ledcWriteTone(PIN_BUZZER, 0);
+
+  // 首次通电默认灯效：HELLO 摩尔斯码
+  setMode(18);
 
   // 初始化 BLE
   setupBLE();

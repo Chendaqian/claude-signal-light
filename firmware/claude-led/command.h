@@ -21,33 +21,38 @@ void setMode(int mode) {
 }
 
 // ===== 命令解析 =====
-// 命令格式：mode[,buzzer_duration_ms]
+// 命令格式：mode[,buzzer_param]
 //   mode: 0-19 数字或名称别名
-//   buzzer_duration_ms: 蜂鸣器响的毫秒数，0=不响，默认0
-//   示例："alarm,200" → 模式6 + 蜂鸣器响200ms
-//         "alarm,20"  → 模式6 + 极短滴一声
+//   buzzer_param: 蜂鸣器参数
+//     0 = 不响
+//     1 = 短响一声（80ms，主板自检音）
+//     2 = 短响两声（两次不同声调）
+//   示例："alarm,1"   → 模式6 + 短响一声
+//         "alarm,2"   → 模式6 + 短响两声
 //         "alarm,0"   → 模式6 + 不响
 //         "alarm"     → 模式6 + 不响
 bool handleCommand(String cmd) {
   cmd.trim();
   cmd.toLowerCase();
 
-  // 解析逗号分隔的参数
+  // 解析逗号分隔的参数（最多2个）
   String modeStr = cmd;
   String buzzerStr = "0";
+
   int commaIdx = cmd.indexOf(',');
   if (commaIdx >= 0) {
     modeStr = cmd.substring(0, commaIdx);
     buzzerStr = cmd.substring(commaIdx + 1);
     buzzerStr.trim();
   }
-  unsigned long buzzMs = buzzerStr.toInt();
+
+  int buzzParam = buzzerStr.toInt();
 
   // 先尝试数字
   int num = modeStr.toInt();
   if (num >= 0 && num <= 19 && (String(num) == modeStr || modeStr == "0")) {
     setMode(num);
-    if (buzzMs > 0) buzz(buzzMs);
+    buzz(buzzParam);
     return true;
   }
 
@@ -56,8 +61,8 @@ bool handleCommand(String cmd) {
   if (modeStr == "thinking" || modeStr == "think" || modeStr == "green" || modeStr == "blink") { setMode(2); return true; }
   if (modeStr == "busy" || modeStr == "executing") { setMode(7); return true; }
   if (modeStr == "success" || modeStr == "ok" || modeStr == "done") { setMode(5); return true; }
-  if (modeStr == "error" || modeStr == "failed") { setMode(3); if (buzzMs > 0) buzz(buzzMs); return true; }
-  if (modeStr == "alarm" || modeStr == "permission") { setMode(6); if (buzzMs > 0) buzz(buzzMs); return true; }
+  if (modeStr == "error" || modeStr == "failed") { setMode(3); buzz(buzzParam); return true; }
+  if (modeStr == "alarm" || modeStr == "permission") { setMode(6); buzz(buzzParam); return true; }
   if (modeStr == "taichi" || modeStr == "running" || modeStr == "run") { setMode(17); return true; }
 
   // 名称别名

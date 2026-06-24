@@ -2,9 +2,11 @@
 #define CONFIG_H
 
 // ===== BLE 配置 =====
-#define DEVICE_NAME "Claude-LED-JGY"
-#define SERVICE_UUID "12345678-1234-1234-1234-123456789abc"
-#define CHAR_UUID "12345678-1234-1234-1234-123456789abd"
+#define DEVICE_NAME "Claude-LED-LUCKEY"
+//#define SERVICE_UUID "1460d279-efe7-4066-a466-e80dd498c317"
+//#define CHAR_UUID "a9680f41-1111-4b02-b787-48592ff38d3b"
+#define SERVICE_UUID "f4b7e3a1-5c6d-4e8f-9a2b-1c3d5e7f9a0b"
+#define CHAR_UUID    "8c9d4e2f-1a3b-4c5d-6e7f-8a9b0c1d2e3f"
 
 // ===== LED 引脚 =====
 #define PIN_RED    5

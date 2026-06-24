@@ -21,7 +21,7 @@ ESP32C3 蓝牙 BLE 状态指示灯，用于 Claude Code 工作状态的物理提
 |------|----------|
 | 开发板 | ESP32C3-Super-Mini |
 | LED 电路板 | 三色 LED（共阴极，红/黄/绿） |
-| 蜂鸣器 | 有源蜂鸣器（低电平触发） |
+| 蜂鸣器 | 无源蜂鸣器模块（3线制：VCC、IO、GND） |
 
 ## 接线定义
 
@@ -31,10 +31,11 @@ ESP32C3 蓝牙 BLE 状态指示灯，用于 Claude Code 工作状态的物理提
 | LED 黄 | Y | GPIO6 | 右侧第 2 个 |
 | LED 绿 | G | GPIO7 | 右侧第 3 个 |
 | LED 地 | GND | GND | 左侧第 2 个 |
-| 蜂鸣器正 | + | GPIO4 | 左侧第 4 个 |
+| 蜂鸣器正 | + | 3V3 | 左侧第 3 个 |
+| 蜂鸣器 IO | IO | GPIO4 | 左侧第 4 个 |
 | 蜂鸣器负 | - | GND | 左侧第 2 个 |
 
-> 注意：GPIO8 是板载蓝灯，GPIO0-GPIO3 保留给 ADC/SPI，不要使用。
+> 注意：GPIO8 是板载蓝灯（右侧第 4 个），不要使用。
 
 ## LED 亮度配置
 
@@ -76,8 +77,8 @@ ESP32C3 蓝牙 BLE 状态指示灯，用于 Claude Code 工作状态的物理提
 ## 蓝牙通信
 
 - 设备名：`Claude-LED-LUCKEY`
-- 服务 UUID：`12345678-1234-1234-1234-123456789abc`
-- 特征值 UUID：`12345678-1234-1234-1234-123456789abd`
+- 服务 UUID：`f4b7e3a1-5c6d-4e8f-9a2b-1c3d5e7f9a0b`
+- 特征值 UUID：`8c9d4e2f-1a3b-4c5d-6e7f-8a9b0c1d2e3f`
 - 写入方式：Write Without Response
 - 数据格式：UTF-8 字符串
 
@@ -86,15 +87,18 @@ ESP32C3 蓝牙 BLE 状态指示灯，用于 Claude Code 工作状态的物理提
 #### 命令格式
 
 ```
-mode[,buzzer_duration_ms]
+mode[,buzzer_param]
 ```
 
 - `mode`：模式编号（0-19）或名称
-- `buzzer_duration_ms`：蜂鸣器响的毫秒数，`0`=不响，默认 `0`
+- `buzzer_param`：蜂鸣器参数
+  - `0` = 不响
+  - `1` = 短响一声（80ms，主板自检音）
+  - `2` = 短响两声（两次不同声调，第一声2000Hz，第二声1000Hz）
 
 示例：
-- `"6,200"` → 模式 6（红灯常亮）+ 蜂鸣器响 200ms
-- `"alarm,20"` → 红灯常亮 + 极短滴一声
+- `"alarm,1"` → 红灯常亮 + 短响一声
+- `"alarm,2"` → 红灯常亮 + 短响两声（不同声调）
 - `"alarm,0"` → 红灯常亮 + 不响
 - `"alarm"` → 红灯常亮 + 不响
 - `"2"` → 模式 2（绿灯闪烁），蜂鸣器不响
@@ -150,8 +154,9 @@ python scripts/test-all-effects.py
 # 手动测试单个灯效
 python scripts/send-hook.py 17        # 太极呼吸
 python scripts/send-hook.py taichi    # 同上
-python scripts/send-hook.py 6 200     # 红灯常亮 + 蜂鸣器响 200ms
-python scripts/send-hook.py alarm 20  # 红灯常亮 + 极短滴一声
+python scripts/send-hook.py alarm 1   # 红灯常亮 + 短响一声
+python scripts/send-hook.py alarm 2   # 红灯常亮 + 短响两声（不同声调）
+python scripts/send-hook.py alarm 0   # 红灯常亮 + 不响
 ```
 
 ### 3. Claude Code 集成
@@ -205,13 +210,15 @@ python scripts/send-hook.py alarm 20  # 红灯常亮 + 极短滴一声
 
 | Hook 事件 | 参数 | 灯效 | 蜂鸣器 |
 |-----------|------|------|--------|
-| SessionStart | 17 | 太极呼吸 | 不响 |
+| SessionStart | 18 | HELLO 摩尔斯码 | 不响 |
 | UserPromptSubmit | 2 | 绿灯闪烁 | 不响 |
 | PreToolUse | 2 | 绿灯闪烁 | 不响 |
 | PostToolUseFailure | 3 | 红灯闪烁 | 不响 |
-| PermissionRequest | 4 200 | 黄灯闪烁 | 响 200ms |
+| PermissionRequest | 4 1 | 黄灯闪烁 | 短响一声 |
 | Stop | 5 | 绿灯常亮 | 不响 |
 | SessionEnd | 17 | 太极呼吸 | 不响 |
+
+> 首次通电默认灯效为 18（HELLO 摩尔斯码），5 分钟无操作后自动关闭。
 
 ## 依赖
 

@@ -21,7 +21,7 @@ ESP32C3 Bluetooth BLE status indicator light for Claude Code workflow notificati
 |-----------|-------------|
 | Board | ESP32C3-Super-Mini |
 | LED Board | Tri-color LED (common cathode, Red/Yellow/Green) |
-| Buzzer | Active buzzer (active-low trigger) |
+| Buzzer | Passive buzzer (3-pin: VCC, IO, GND) |
 
 ## Wiring Definition
 
@@ -31,10 +31,11 @@ ESP32C3 Bluetooth BLE status indicator light for Claude Code workflow notificati
 | LED Yellow | Y | GPIO6 | Right side, 2nd pin |
 | LED Green | G | GPIO7 | Right side, 3rd pin |
 | LED Ground | GND | GND | Left side, 2nd pin |
-| Buzzer (+) | + | GPIO4 | Left side, 4th pin |
-| Buzzer (-) | - | GND | Left side, 2nd pin |
+| Buzzer VCC | + | 3V3 | Left side, 3rd pin |
+| Buzzer IO | IO | GPIO4 | Left side, 4th pin |
+| Buzzer GND | - | GND | Left side, 2nd pin |
 
-> Note: GPIO8 is the onboard blue LED. GPIO0-GPIO3 are reserved for ADC/SPI — do not use.
+> Note: GPIO8 is the onboard blue LED (right side, 4th pin) — do not use.
 
 ## LED Brightness Configuration
 
@@ -76,8 +77,8 @@ After modification, re-flash the firmware for global effect.
 ## Bluetooth Communication
 
 - Device Name: `Claude-LED-LUCKEY`
-- Service UUID: `12345678-1234-1234-1234-123456789abc`
-- Characteristic UUID: `12345678-1234-1234-1234-123456789abd`
+- Service UUID: `f4b7e3a1-5c6d-4e8f-9a2b-1c3d5e7f9a0b`
+- Characteristic UUID: `8c9d4e2f-1a3b-4c5d-6e7f-8a9b0c1d2e3f`
 - Write Type: Write Without Response
 - Data Format: UTF-8 string
 
@@ -86,15 +87,18 @@ After modification, re-flash the firmware for global effect.
 #### Command Format
 
 ```
-mode[,buzzer_duration_ms]
+mode[,buzzer_param]
 ```
 
 - `mode`: Mode number (0-19) or name
-- `buzzer_duration_ms`: Buzzer duration in milliseconds, `0`=off (default `0`)
+- `buzzer_param`: Buzzer parameter
+  - `0` = off
+  - `1` = short beep (80ms, motherboard POST sound)
+  - `2` = double beep (two different tones, 2000Hz + 1000Hz)
 
 Examples:
-- `"6,200"` → Mode 6 (Red On) + buzzer 200ms
-- `"alarm,20"` → Red on + short beep
+- `"alarm,1"` → Red on + short beep
+- `"alarm,2"` → Red on + double beep (different tones)
 - `"alarm,0"` → Red on + no buzzer
 - `"alarm"` → Red on + no buzzer
 - `"2"` → Mode 2 (Green Flash), buzzer off
@@ -150,8 +154,9 @@ python scripts/test-all-effects.py
 # Test a single effect manually
 python scripts/send-hook.py 17        # Taichi breathing
 python scripts/send-hook.py taichi    # Same as above
-python scripts/send-hook.py 6 200     # Red on + buzzer 200ms
-python scripts/send-hook.py alarm 20  # Red on + short beep
+python scripts/send-hook.py alarm 1   # Red on + short beep
+python scripts/send-hook.py alarm 2   # Red on + double beep (different tones)
+python scripts/send-hook.py alarm 0   # Red on + no buzzer
 ```
 
 ### 3. Claude Code Integration
@@ -205,13 +210,15 @@ Add hooks in `~/.claude/settings.json`:
 
 | Hook Event | Param | LED Effect | Buzzer |
 |------------|-------|------------|--------|
-| SessionStart | 17 | Taichi breathing | Off |
+| SessionStart | 18 | HELLO Morse | Off |
 | UserPromptSubmit | 2 | Green flash | Off |
 | PreToolUse | 2 | Green flash | Off |
 | PostToolUseFailure | 3 | Red flash | Off |
-| PermissionRequest | 4 200 | Yellow flash | 200ms |
+| PermissionRequest | 4 1 | Yellow flash | Short beep |
 | Stop | 5 | Green on | Off |
 | SessionEnd | 17 | Taichi breathing | Off |
+
+> Default LED effect on power-up is 18 (HELLO Morse code). Auto-off after 5 minutes of inactivity.
 
 ## Dependencies
 
