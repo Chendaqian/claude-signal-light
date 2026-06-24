@@ -95,12 +95,14 @@ mode[,buzzer_param]
 - `mode`: Mode number (0-19) or name
 - `buzzer_param`: Buzzer parameter
   - `0` = off
-  - `1` = short beep (80ms, motherboard POST sound)
-  - `2` = double beep (two different tones, 2000Hz + 1000Hz)
+  - `1` = short beep (80ms, 2000Hz, motherboard POST sound)
+  - `2` = double beep (2000Hz + 1000Hz, 80ms each, different tones)
+  - `3` = high-frequency beep (200ms, 4000Hz)
 
 Examples:
 - `"alarm,1"` → Red on + short beep
 - `"alarm,2"` → Red on + double beep (different tones)
+- `"alarm,3"` → Red on + high-frequency alert
 - `"alarm,0"` → Red on + no buzzer
 - `"alarm"` → Red on + no buzzer
 - `"2"` → Mode 2 (Green Flash), buzzer off
@@ -140,6 +142,8 @@ Send the mode number directly, e.g. `"0"`, `"17"`.
 | strobe / strobechase | 16 |
 | hello / hellomorse | 18 |
 | radar | 19 |
+| castle / sky | Easter egg: Castle in the Sky short (~2.5s) |
+| castle,1 / sky,1 | Easter egg: Castle in the Sky full (~46s) |
 
 ## Usage
 
@@ -198,7 +202,7 @@ Add hooks in `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "python \"D:\\path\\to\\send-hook.py\" 4 200",
+            "command": "python \"D:\\path\\to\\send-hook.py\" 4 1",
             "timeout": 5000
           }
         ]
@@ -220,7 +224,19 @@ Add hooks in `~/.claude/settings.json`:
 | Stop | 5 | Green on | Off |
 | SessionEnd | 17 | Taichi breathing | Off |
 
-> Default LED effect on power-up is 18 (HELLO Morse code). Auto-off after 5 minutes of inactivity.
+> Default LED effect on power-up is 18 (HELLO Morse code), with a Castle in the Sky intro jingle playing on startup. Auto-off after 5 minutes of inactivity.
+
+### Easter Egg: Castle in the Sky
+
+Plays a short Castle in the Sky intro jingle (~2.5s) automatically on power-up. Can also be triggered manually:
+
+```bash
+python scripts/send-hook.py castle      # Short version (~2.5s)
+python scripts/send-hook.py castle,1    # Full version (~46s)
+python scripts/send-hook.py sky         # Same as castle
+```
+
+Send `castle` again while playing to stop. Melody ported from the classic 8051 version.
 
 ## Dependencies
 

@@ -27,22 +27,31 @@ Claude Code LED 状态桥接脚本（Python 版）
 Claude Code 别名（兼容旧接口）：
   off → 0, thinking → 2, busy → 7, success → 5, error → 3, alarm → 6
 
+彩蛋命令：
+  castle / sky       → 播放天空之城短版（~2.5秒）
+  castle,1 / sky,1   → 播放天空之城完整版（~46秒）
+
 用法：
   send-hook.py <mode> [buzzer_param]
     mode:         模式编号 0-19 或名称
     buzzer_param: 蜂鸣器参数
       0 = 不响
-      1 = 短响一声（80ms，主板自检音）
-      2 = 短响两声（两次不同声调）
+      1 = 短响一声（80ms，2000Hz，主板自检音）
+      2 = 短响两声（2000Hz+1000Hz，各80ms，不同声调）
+      3 = 高频短响（200ms，4000Hz）
 
   示例：
     send-hook.py 6 1        → 模式6（红灯常亮）+ 短响一声
     send-hook.py 6 2        → 模式6（红灯常亮）+ 短响两声
+    send-hook.py 6 3        → 模式6（红灯常亮）+ 高频提示音
     send-hook.py alarm 1    → 红灯常亮 + 短响一声
     send-hook.py alarm 2    → 红灯常亮 + 短响两声
+    send-hook.py alarm 3    → 红灯常亮 + 高频提示音
     send-hook.py alarm 0    → 红灯常亮 + 不响
     send-hook.py alarm      → 红灯常亮 + 不响
     send-hook.py 2          → 模式2（绿灯闪烁），蜂鸣器不响
+    send-hook.py castle     → 彩蛋：播放天空之城短版
+    send-hook.py castle,1   → 彩蛋：播放天空之城完整版
 """
 
 import asyncio

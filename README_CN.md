@@ -95,12 +95,14 @@ mode[,buzzer_param]
 - `mode`：模式编号（0-19）或名称
 - `buzzer_param`：蜂鸣器参数
   - `0` = 不响
-  - `1` = 短响一声（80ms，主板自检音）
-  - `2` = 短响两声（两次不同声调，第一声2000Hz，第二声1000Hz）
+  - `1` = 短响一声（80ms，2000Hz，主板自检音）
+  - `2` = 短响两声（2000Hz + 1000Hz，各 80ms，不同声调）
+  - `3` = 高频短响（200ms，4000Hz）
 
 示例：
 - `"alarm,1"` → 红灯常亮 + 短响一声
 - `"alarm,2"` → 红灯常亮 + 短响两声（不同声调）
+- `"alarm,3"` → 红灯常亮 + 高频提示音
 - `"alarm,0"` → 红灯常亮 + 不响
 - `"alarm"` → 红灯常亮 + 不响
 - `"2"` → 模式 2（绿灯闪烁），蜂鸣器不响
@@ -140,6 +142,8 @@ mode[,buzzer_param]
 | strobe / strobechase | 16 |
 | hello / hellomorse | 18 |
 | radar | 19 |
+| castle / sky | 彩蛋：播放天空之城短版（~2.5秒） |
+| castle,1 / sky,1 | 彩蛋：播放天空之城完整版（~46秒） |
 
 ## 使用方法
 
@@ -198,7 +202,7 @@ python scripts/send-hook.py alarm 0   # 红灯常亮 + 不响
         "hooks": [
           {
             "type": "command",
-            "command": "python \"D:\\path\\to\\send-hook.py\" 4 200",
+            "command": "python \"D:\\path\\to\\send-hook.py\" 4 1",
             "timeout": 5000
           }
         ]
@@ -220,7 +224,19 @@ python scripts/send-hook.py alarm 0   # 红灯常亮 + 不响
 | Stop | 5 | 绿灯常亮 | 不响 |
 | SessionEnd | 17 | 太极呼吸 | 不响 |
 
-> 首次通电默认灯效为 18（HELLO 摩尔斯码），5 分钟无操作后自动关闭。
+> 首次通电默认灯效为 18（HELLO 摩尔斯码），同时播放天空之城前奏短音作为启动提示。5 分钟无操作后自动关闭。
+
+### 彩蛋：天空之城
+
+开机自动播放天空之城前奏短音（~2.5 秒）。也可通过命令手动触发：
+
+```bash
+python scripts/send-hook.py castle      # 短版 (~2.5秒)
+python scripts/send-hook.py castle,1    # 完整版 (~46秒)
+python scripts/send-hook.py sky         # 同 castle
+```
+
+播放中再次发送 `castle` 可停止播放。旋律数据由 8051 版本移植而来。
 
 ## 依赖
 
