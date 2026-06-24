@@ -52,20 +52,6 @@ void setup() {
 }
 
 void loop() {
-  // ===== 测试1: 有源蜂鸣器模式（高电平触发）=====
-  Serial.println("=== Test 1: Active Buzzer (HIGH level) ===");
-
-  Serial.print("  Short beep (100ms)... GPIO4=");
-  Serial.print(digitalRead(PIN_BUZZER));
-  Serial.print(" → ");
-  digitalWrite(PIN_BUZZER, HIGH);
-  Serial.print(digitalRead(PIN_BUZZER));
-  delay(100);
-  digitalWrite(PIN_BUZZER, LOW);
-  Serial.print(" → ");
-  Serial.println(digitalRead(PIN_BUZZER));
-  delay(500);
-
   // ===== 测试3: 无源蜂鸣器模式（PWM）=====
   Serial.println("=== Test 3: Passive Buzzer (PWM) ===");
 
@@ -85,26 +71,5 @@ void loop() {
   ledcWriteTone(PIN_BUZZER, 4000);
   delay(200);
   ledcWriteTone(PIN_BUZZER, 0);
-  delay(1000);
-
-  // ===== 直接测试：长时间响 =====
-  Serial.println("=== Test 4: Direct long test (1 second) ===");
-  Serial.println("  Turning ON GPIO4 HIGH for 1 second...");
-  digitalWrite(PIN_BUZZER, HIGH);
-  Serial.print("  GPIO4 state: ");
-  Serial.println(digitalRead(PIN_BUZZER));
-  delay(1000);
-  digitalWrite(PIN_BUZZER, LOW);
-  Serial.println("  GPIO4 turned OFF");
-
-  Serial.println("=== Test 5: PWM long test (1 second) ===");
-  Serial.println("  PWM 2000Hz for 1 second...");
-  ledcWriteTone(PIN_BUZZER, 2000);
-  delay(1000);
-  ledcWriteTone(PIN_BUZZER, 0);
-  Serial.println("  PWM stopped");
-
-  Serial.println("--- Test cycle complete ---");
-  Serial.println();
   delay(1000);
 }
